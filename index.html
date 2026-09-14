@@ -1,0 +1,478 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12AV Efsaneleri</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        /* Arkaplan Animasyonu */
+        body { 
+            font-family: 'Comic Neue', cursive; 
+            background: linear-gradient(-45deg, #ff9a9e, #fecfef, #a1c4fd, #c2e9fb, #fbc2eb);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #333; 
+            margin: 0; 
+            padding: 0; 
+            overflow-x: hidden;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        #confetti { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:999; }
+
+        .container { 
+            max-width: 1400px; 
+            margin: 3rem auto; 
+            padding: 0 2rem; 
+            position: relative;
+            z-index: 10;
+        }
+
+        .title-fun {
+            text-align: center;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 4.5rem;
+            color: #fff;
+            -webkit-text-stroke: 2px #ff3366;
+            text-shadow: 4px 4px 0px #ff3366, 8px 8px 0px #333;
+            margin-bottom: 4rem;
+            animation: popBounce 2s ease-in-out infinite alternate;
+        }
+        @keyframes popBounce {
+            0% { transform: scale(1) translateY(0) rotate(-2deg); }
+            100% { transform: scale(1.05) translateY(-15px) rotate(2deg); }
+        }
+
+        /* GRID SİSTEMİ - Yan yana sıralama için kesin çözüm */
+        .gallery { 
+            display: grid;
+            /* Ekrana sığabildiği kadar yan yana koyar, sığmazsa alt satıra iner. Boyutları 250px ayarladık. */
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem 2rem; 
+            justify-items: center; 
+            align-items: start;
+        }
+
+        .media-card { 
+            background: #fff; 
+            padding: 15px 15px 45px 15px; 
+            border-radius: 5px; 
+            box-shadow: 5px 5px 20px rgba(0,0,0,0.2); 
+            width: 100%;
+            max-width: 280px; /* Kutunun fazla büyümesini engeller */
+            position: relative;
+            cursor: pointer;
+            
+            opacity: 0;
+            transform: translateY(100px) scale(0.5) rotate(var(--rot));
+            transition: opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55), box-shadow 0.3s;
+        }
+
+        .media-card.show {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotate(var(--rot));
+        }
+
+        .media-card:hover { 
+            transform: scale(1.15) rotate(0deg) translateY(-10px) !important; 
+            box-shadow: 0px 15px 30px rgba(255, 51, 102, 0.4); 
+            z-index: 100;
+        }
+
+        .media-card::after {
+            content: attr(data-caption);
+            position: absolute;
+            bottom: 12px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: 'Permanent Marker', cursive;
+            font-size: 1.2rem;
+            color: #333;
+            transition: color 0.3s;
+        }
+        
+        .media-card:hover::after {
+            color: #ff3366;
+            animation: wiggle 0.5s ease-in-out infinite;
+        }
+
+        @keyframes wiggle {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(5deg); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        img.card-media, video.card-media { 
+            width: 100%; 
+            height: 250px; 
+            object-fit: cover; 
+            display: block; 
+            border: 3px solid #eee;
+            border-radius: 3px;
+        }
+        video.card-media { 
+            background-color: #111; 
+        }
+
+        /* Lightbox */
+        #lightbox {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        #lightbox.active {
+            opacity: 1; pointer-events: all;
+        }
+        #lightbox-content {
+            max-width: 90%; 
+            max-height: 90vh;
+            border: 5px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(255,255,255,0.6);
+            transform: scale(0.5) translateY(200px);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #lightbox.active #lightbox-content {
+            transform: scale(1) translateY(0);
+        }
+        #close-btn {
+            position: absolute; top: 20px; right: 40px;
+            font-size: 50px; color: #fff; cursor: pointer;
+            font-family: sans-serif;
+            transition: transform 0.3s;
+        }
+        #close-btn:hover {
+            transform: rotate(90deg) scale(1.2);
+            color: #ff3366;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="confetti"></canvas>
+
+<div class="container">
+    <h1 class="title-fun">12AV Efsaneleri</h1>
+    <div class="gallery">        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.03.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Harika 🌟">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.23.51.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Efsane an! 🔥">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.58 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.22.19.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.05 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Hahaha 😂">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.04 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.38 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Hahaha 😂">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.32 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.18 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.04 (3).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.39 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.18 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Harika 🌟">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.32.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Efsane an! 🔥">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.28 (4).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.30 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.23.03.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.38 (3).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.30 (4).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.22.44.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.04.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.30 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.03 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Hahaha 😂">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.05 (3).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Efsane an! 🔥">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.17.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Bu ne yahu 🤪">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.21.44.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.11 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Efsane an! 🔥">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.30.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Bu ne yahu 🤪">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.23.29.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Harika 🌟">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.30 (5).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.04 (4).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.22.26.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.19 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.45 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.29.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.58.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.19 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.22.16.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Hahaha 😂">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.28 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.04 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Harika 🌟">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.19.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Harika 🌟">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.37.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Efsane an! 🔥">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.21.37.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.11.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.23.58.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.03 (4).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Hahaha 😂">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.04 (5).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.30 (7).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.23.38.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Efsane an! 🔥">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.45 (3).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Harika 🌟">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.05.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Efsane an! 🔥">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.45 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.03 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.24.02.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.18.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.28 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.38.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.30.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.45.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.28 (3).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.39.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.22.29.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.30 (3).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.21 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Gözüm kanadı 💀">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.28.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Hahaha 😂">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.38 (2).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.04 (6).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.21.23.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.05 (4).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.21.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Hahaha 😂">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.21.46.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Hahaha 😂">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.21 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.30 (6).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Efsane an! 🔥">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.05 (1).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.22.18 (3).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Bu ne yahu 🤪">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.23.27.jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="O gün... 🤯">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.21.55.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.05 (5).jpeg" alt="Komik Anı" loading="lazy">
+        </div>        <div class="media-card" data-caption="Yok artık 😱">
+            <video class="card-media" controls preload="metadata">
+                <source src="WhatsApp Video 2026-09-14 at 22.23.27.mp4" type="video/mp4">
+            </video>
+        </div>        <div class="media-card" data-caption="Vay canına! 🤣">
+            <img class="card-media" src="WhatsApp Image 2026-09-14 at 22.24.03 (3).jpeg" alt="Komik Anı" loading="lazy">
+        </div>    </div>
+</div>
+
+<div id="lightbox">
+    <span id="close-btn">&times;</span>
+    <div id="lightbox-container"></div>
+</div>
+
+<script>
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, index) => {
+            if (entry.isIntersecting) {
+                setTimeout(() => {
+                    entry.target.classList.add('show');
+                }, (index % 10) * 80); // Aynı satırdakileri hafif gecikmeli açar
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.media-card').forEach(card => {
+        let rot = (Math.random() * 12 - 6) + 'deg';
+        card.style.setProperty('--rot', rot);
+        observer.observe(card);
+    });
+
+    const lightbox = document.getElementById('lightbox');
+    const lightboxContainer = document.getElementById('lightbox-container');
+    const closeBtn = document.getElementById('close-btn');
+
+    document.querySelectorAll('.media-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.tagName === 'VIDEO' && e.target.controls) return;
+            lightboxContainer.innerHTML = ''; 
+            const media = card.querySelector('.card-media').cloneNode(true);
+            media.id = 'lightbox-content';
+            if(media.tagName === 'VIDEO') media.autoplay = true;
+            lightboxContainer.appendChild(media);
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden'; 
+        });
+    });
+
+    closeBtn.addEventListener('click', () => {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = 'auto';
+        const vid = lightboxContainer.querySelector('video');
+        if(vid) vid.pause();
+    });
+    
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) closeBtn.click();
+    });
+
+    const canvas = document.getElementById('confetti');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+    const colors = ['#ff3366', '#33ccff', '#ffcc00', '#00ff66', '#9933ff'];
+
+    for(let i=0; i<100; i++) {
+        particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            r: Math.random() * 6 + 2,
+            d: Math.random() * 100 + 10,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            tilt: Math.floor(Math.random() * 10) - 10,
+            tiltAngleInc: (Math.random() * 0.07) + 0.05,
+            tiltAngle: 0
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for(let i=0; i<particles.length; i++) {
+            let p = particles[i];
+            ctx.beginPath();
+            ctx.lineWidth = p.r;
+            ctx.strokeStyle = p.color;
+            ctx.moveTo(p.x + p.tilt + p.r, p.y);
+            ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+            ctx.stroke();
+        }
+        update();
+    }
+
+    function update() {
+        for(let i=0; i<particles.length; i++) {
+            let p = particles[i];
+            p.tiltAngle += p.tiltAngleInc;
+            p.y += (Math.cos(p.d) + 1 + p.r / 2) / 2;
+            p.x += Math.sin(p.tiltAngle) * 2;
+
+            if(p.y > canvas.height) {
+                particles[i] = {
+                    x: Math.random() * canvas.width,
+                    y: -20,
+                    r: p.r,
+                    d: p.d,
+                    color: p.color,
+                    tilt: p.tilt,
+                    tiltAngleInc: p.tiltAngleInc,
+                    tiltAngle: p.tiltAngle
+                };
+            }
+        }
+    }
+    
+    setInterval(draw, 20);
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+</script>
+</body>
+</html>
